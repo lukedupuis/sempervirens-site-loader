@@ -15,12 +15,14 @@ class SiteLoader {
 
   #app;
   #apiEndpointBasePath;
+  #sitesDir;
   publicDir;
 
   constructor({
     domain = '',
     isProd = false,
     apiEndpointBasePath = '/api',
+    sitesDir = 'sites',
     endpoints = []
   } = {}) {
     this.#domain = domain;
@@ -29,6 +31,7 @@ class SiteLoader {
       apiEndpointBasePath.charAt(0) == '/'
         ? apiEndpointBasePath
         :`/${apiEndpointBasePath}`;
+    this.#sitesDir = sitesDir;
     this.#endpoints = endpoints;
     this.#validate();
   }
@@ -79,7 +82,7 @@ class SiteLoader {
     this.#app = app;
     this.publicDir = join(
       process.cwd(),
-      'apps',
+      this.#sitesDir,
       this.#domain,
       this.#isProd ? 'dist' : 'public'
     );
