@@ -165,48 +165,6 @@ class SiteLoader {
   }
 
   /**
-   * @function
-   */
-  #initRequestValidator() {
-    this.#app.use((req, res, next) => {
-
-      if (!req.isSite) return next();
-
-      let path = '';
-      if (req.pathParts[0] == 'sitemap.xml') {
-        path = 'sitemap.xml';
-      } else if (req.pathParts[0] == 'robots.txt') {
-        path = 'robots.txt';
-      } else if (req.pathParts[0] == '.well-known') {
-        res.setHeader('content-type', 'text/plain');
-        // path = req.originalUrl.replace(`/${this.abbr}`, '');
-      }
-
-      if (path) {
-        res.status(200).sendFile(join(this.publicDir, path));
-      } else {
-        next();
-      }
-
-    });
-  }
-
-  /**
-   * @function initSiteRoutes
-   * @returns {void}
-   * @description Sets routes passed in
-   */
-  #initSiteRoutes() {
-    // Validate site requests?
-
-    // Register site routes
-    // registerEndpoints({
-    //   app: this.#app,
-    //   endpoints: this.#siteRoutes
-    // });
-  }
-
-  /**
    * @function #initCatchAll
    * @returns {void}
    * @description For each site that does not have "siteRoutes" defined, a
@@ -226,26 +184,6 @@ class SiteLoader {
         next();
       }
     });
-  }
-
-  /**
-   * @function
-   */
-  #initMultipleRoutes() {
-    // this.#siteRoutes.forEach(route => {
-    //   const [ method, path ] = route.path.split(' ');
-    //   if (!path.charAt(0) == '/') path = `/${path}`;
-    //   this.#app[method.toLowerCase()](path, (req, res, next) => {
-    //     if (!req.isSite) {
-    //       next();
-    //     } else {
-    //       route.handler(req, res, next);
-    //     }
-    //   });
-    // });
-    // registerEndpoints({
-    //   app: this.#app,
-
   }
 
 }
