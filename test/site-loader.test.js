@@ -72,14 +72,12 @@ describe('1. SiteLoader', () => {
       const res = await superagent.get('http://site-1:8080');
       expect(res.status).to.equal(200);
       expect(res.text).to.include('<title>Site 1</title>');
-      expect(true).to.be.true;
     });
 
     it('1.2.2. Should make the site available at http://localhost/{domain}', async () => {
       const res = await superagent.get('http://localhost:8080/site-1');
       expect(res.status).to.equal(200);
       expect(res.text).to.include('<title>Site 1</title>');
-      expect(true).to.be.true;
     });
 
     it('1.2.3. Should make static resources available at http://{domain}/static', async () => {
@@ -128,14 +126,12 @@ describe('1. SiteLoader', () => {
       const res = await superagent.get('http://site-1:8081');
       expect(res.status).to.equal(200);
       expect(res.text).to.include('<title>Site 1</title>');
-      expect(true).to.be.true;
     });
 
     it('1.3.2. Should make the first site available at http://localhost/{domain}', async () => {
       const res = await superagent.get('http://localhost:8081/site-1');
       expect(res.status).to.equal(200);
       expect(res.text).to.include('<title>Site 1</title>');
-      expect(true).to.be.true;
     });
 
     it('1.3.3. Should make the first site static resources available at http://{domain}/static', async () => {
@@ -152,14 +148,12 @@ describe('1. SiteLoader', () => {
       const res = await superagent.get('http://site-2:8081');
       expect(res.status).to.equal(200);
       expect(res.text).to.include('<title>Site 2</title>');
-      expect(true).to.be.true;
     });
 
     it('1.3.6. Should make the second site available at http://localhost/{domain}', async () => {
       const res = await superagent.get('http://localhost:8081/site-2');
       expect(res.status).to.equal(200);
       expect(res.text).to.include('<title>Site 2</title>');
-      expect(true).to.be.true;
     });
 
     it('1.3.7. Should make the second site static resources available at http://{domain}/static', async () => {
@@ -221,13 +215,13 @@ describe('1. SiteLoader', () => {
 
     });
 
-    describe('1.4.2. When "apiEndpointBasePath" is specified', () => {
+    describe('1.4.2. When "apiBasePath" is specified', () => {
       // return;
 
       const app = express();
       const siteLoader = new SiteLoader({
         domain: 'site-1',
-        apiEndpointBasePath: 'api-1',
+        apiBasePath: 'api-1',
         endpoints: [
           {
             path: 'GET /api-1/test-1',
@@ -269,7 +263,7 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.5. When "endpoints" are given for multiple sites', () => {
-    // return;
+    return;
 
     const app = express();
     const siteLoader1 = new SiteLoader({
@@ -330,7 +324,7 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.6. When "endpoints" are given with a function as the handler instead of the RequestHandler class', () => {
-    // return;
+    return;
 
     const app = express();
     const siteLoader = new SiteLoader({
@@ -361,6 +355,70 @@ describe('1. SiteLoader', () => {
     it('1.6.2. Should make a non-API endpoint available at http://{domain}/{path}', async () => {
       const { text } = await superagent.get('http://site-1:8085/test-2');
       expect(text).to.equal('Success 2');
+    });
+
+  });
+
+  describe('1.7. When "middleware" is given for one site', () => {
+
+    const app = express();
+    const siteLoader1 = new SiteLoader({
+      domain: 'site-1',
+      middleware: [
+        {
+          path: 'GET /test-1',
+          handler: (req, res, next) => {
+            res.set('Content-Security-Policy', `script-src 'self' test-domain.com`);
+            next();
+          }
+        },
+        {
+          handler: (req, res, next) => {
+            res.set('custom-header', 'custom header value');
+            next();
+          }
+        }
+      ]
+    });
+    siteLoader1.load(app);
+    const siteLoader2 = new SiteLoader({
+      domain: 'site-2'
+    });
+    siteLoader2.load(app);
+    startServer({ app, port: 8086 });
+
+    it('1.7.1. Should only apply the middleware to the specified site', async () => {
+      const { text, headers } = await superagent.get('http://localhost:8086/site-2');
+      expect(text).to.include('This is site-2.');
+      expect(headers['content-security-policy']).not.to.exist;
+      expect(headers['custom-header']).not.to.exist;
+    });
+
+    describe('1.7.2. When "path" is included', () => {
+
+      it('1.7.2.1 Should apply the middleware to the specified path', async () => {
+        const { text, headers } = await superagent.get('http://localhost:8086/site-1/test-1');
+        expect(text).to.include('This is site-1.');
+        expect(headers['content-security-policy']).to.equal("script-src 'self' test-domain.com");
+      });
+
+      it('1.7.2.2 Should not apply the middleware to the request at other paths', async () => {
+        const { text, headers } = await superagent.get('http://localhost:8086/site-1');
+        expect(text).to.include('This is site-1.');
+        expect(headers['content-security-policy']).not.to.exist;
+      });
+
+    });
+
+    describe('1.7.3. When "path" is not included', () => {
+      it('1.7.3.1 Should apply the middleware to the request on all paths', async () => {
+        const { text: text1, headers: headers1 } = await superagent.get('http://localhost:8086/site-1');
+        expect(text1).to.include('This is site-1.');
+        expect(headers1['custom-header']).to.equal('custom header value');
+        const { text: text2, headers: headers2 } = await superagent.get('http://localhost:8086/site-1/test-1');
+        expect(text2).to.include('This is site-1.');
+        expect(headers2['custom-header']).to.equal('custom header value');
+      });
     });
 
   });

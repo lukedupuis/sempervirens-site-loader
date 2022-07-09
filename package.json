@@ -8,7 +8,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "cd test && mocha ."
+    "test": "cd test && mocha *.test.js"
   },
   "repository": {
     "type": "git",

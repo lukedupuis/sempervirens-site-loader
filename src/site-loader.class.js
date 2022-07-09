@@ -12,27 +12,28 @@ class SiteLoader {
   #domain;
   #isProd;
   #endpoints;
+  #middleware;
 
   #app;
-  #apiEndpointBasePath;
+  #apiBasePath;
   #sitesDir;
+
   publicDir;
 
   constructor({
     domain = '',
     isProd = false,
-    apiEndpointBasePath = '/api',
+    apiBasePath = '/api',
     sitesDir = 'sites',
-    endpoints = []
+    endpoints = [],
+    middleware = []
   } = {}) {
     this.#domain = domain;
     this.#isProd = isProd;
-    this.#apiEndpointBasePath =
-      apiEndpointBasePath.charAt(0) == '/'
-        ? apiEndpointBasePath
-        :`/${apiEndpointBasePath}`;
+    this.#apiBasePath = apiBasePath.charAt(0) == '/' ? apiBasePath :`/${apiBasePath}`;
     this.#sitesDir = sitesDir;
     this.#endpoints = endpoints;
+    this.#middleware = middleware;
     this.#validate();
   }
 
@@ -67,6 +68,7 @@ class SiteLoader {
     this.#initInstanceProperties(app);
     this.#initRequestProperties();
     this.#initStaticPath();
+    this.#initMiddleware();
     this.#initEndpointValidation();
     this.#initEndpoints();
     this.#initCatchAll();
@@ -131,6 +133,30 @@ class SiteLoader {
   }
 
   /**
+   * @function #initMiddleware
+   * @returns {void}
+   * @description Defines site-specific middleware on the app before registering
+   * the endpoints, so the middleware is called before the endpoints, because
+   * the endpoints are intended to be the last middleware the request passes
+   * through before sending the response.
+   */
+  #initMiddleware() {
+    this.#middleware.forEach(middleware => {
+      const { handler, path } = middleware;
+      const handle = (req, res, next) => {
+       req.isSite === false ? next() : handler(req, res, next);
+      };
+      if (path) {
+        const [ method, _path ] = path.split(' ');
+        const __path = `*${_path.charAt(0) == '/' ? _path : `/${_path}`}`;
+        this.#app[method.toLowerCase()](__path, handle);
+      } else {
+        this.#app.use(handle);
+      }
+    });
+  }
+
+  /**
    * @function #initEndpointValidator
    * @returns {void}
    * @description If the request is for the current site, and the request path
@@ -142,8 +168,8 @@ class SiteLoader {
       if (
         req.isSite
         && (
-          req.pathParts[0] == this.#apiEndpointBasePath
-          || req.pathParts[1] == this.#apiEndpointBasePath
+          req.pathParts[0] == this.#apiBasePath
+          || req.pathParts[1] == this.#apiBasePath
         )
         && !this.#endpoints.find(({ path }) => path == req.path)
       ) {
