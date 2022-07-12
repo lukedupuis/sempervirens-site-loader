@@ -26,7 +26,7 @@ class SiteLoader {
     apiBasePath = '/api',
     sitesDir = 'sites',
     endpoints = [],
-    middleware = []
+    middleware = [],
   } = {}) {
     this.#domain = domain;
     this.#isProd = isProd;
@@ -100,7 +100,8 @@ class SiteLoader {
     this.#app.use((req, res, next) => {
       req.pathParts = req.path.split('/').filter(Boolean);
       req.isSite =
-        req.hostname.includes(this.#domain)
+        req.isSite
+        || req.hostname.includes(this.#domain)
         || req.pathParts[0] == this.#domain
         || req.pathParts[1] == this.#domain
         || req.pathParts[2] == this.#domain;
@@ -165,13 +166,18 @@ class SiteLoader {
    */
   #initEndpointValidation() {
     this.#app.use((req, res, next) => {
+      // TODO: Optimize
+      const [ p1, p2 ] = req.pathParts;
       if (
         req.isSite
         && (
-          req.pathParts[0] == this.#apiBasePath
-          || req.pathParts[1] == this.#apiBasePath
+          `/${p1}` == this.#apiBasePath
+          || `/${p2}` == this.#apiBasePath
         )
-        && !this.#endpoints.find(({ path }) => path == req.path)
+        && !this.#endpoints.find(({ path }) => {
+          const _path = path.split(' ')[1];
+          return req.path.includes(_path);
+        })
       ) {
         res.status(404).send();
       } else {
@@ -182,6 +188,9 @@ class SiteLoader {
 
   /**
    * @function #initEndpoints
+   * @returns {void}
+   * @description Uses @sempervirens/endpoint registerEndpoints to load the
+   * endpoints onto the app.
    */
   #initEndpoints() {
     registerEndpoints({

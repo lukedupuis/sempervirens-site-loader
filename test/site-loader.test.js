@@ -216,7 +216,7 @@ describe('1. SiteLoader', () => {
     });
 
     describe('1.4.2. When "apiBasePath" is specified', () => {
-      // return;
+      return;
 
       const app = express();
       const siteLoader = new SiteLoader({
@@ -263,7 +263,7 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.5. When "endpoints" are given for multiple sites', () => {
-    return;
+    // return;
 
     const app = express();
     const siteLoader1 = new SiteLoader({
@@ -324,7 +324,7 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.6. When "endpoints" are given with a function as the handler instead of the RequestHandler class', () => {
-    return;
+    // return;
 
     const app = express();
     const siteLoader = new SiteLoader({
@@ -360,6 +360,7 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.7. When "middleware" is given for one site', () => {
+    // return;
 
     const app = express();
     const siteLoader1 = new SiteLoader({
@@ -368,13 +369,13 @@ describe('1. SiteLoader', () => {
         {
           path: 'GET /test-1',
           handler: (req, res, next) => {
-            res.set('Content-Security-Policy', `script-src 'self' test-domain.com`);
+            res.set('Custom-Header-1', 'Custom header 1 value');
             next();
           }
         },
         {
           handler: (req, res, next) => {
-            res.set('custom-header', 'custom header value');
+            res.set('Custom-Header-2', 'Custom header 2 value');
             next();
           }
         }
@@ -390,8 +391,8 @@ describe('1. SiteLoader', () => {
     it('1.7.1. Should only apply the middleware to the specified site', async () => {
       const { text, headers } = await superagent.get('http://localhost:8086/site-2');
       expect(text).to.include('This is site-2.');
-      expect(headers['content-security-policy']).not.to.exist;
-      expect(headers['custom-header']).not.to.exist;
+      expect(headers['custom-header-1']).not.to.exist;
+      expect(headers['custom-header-2']).not.to.exist;
     });
 
     describe('1.7.2. When "path" is included', () => {
@@ -399,13 +400,13 @@ describe('1. SiteLoader', () => {
       it('1.7.2.1 Should apply the middleware to the specified path', async () => {
         const { text, headers } = await superagent.get('http://localhost:8086/site-1/test-1');
         expect(text).to.include('This is site-1.');
-        expect(headers['content-security-policy']).to.equal("script-src 'self' test-domain.com");
+        expect(headers['custom-header-1']).to.equal('Custom header 1 value');
       });
 
       it('1.7.2.2 Should not apply the middleware to the request at other paths', async () => {
         const { text, headers } = await superagent.get('http://localhost:8086/site-1');
         expect(text).to.include('This is site-1.');
-        expect(headers['content-security-policy']).not.to.exist;
+        expect(headers['custom-header-1']).not.to.exist;
       });
 
     });
@@ -414,10 +415,10 @@ describe('1. SiteLoader', () => {
       it('1.7.3.1 Should apply the middleware to the request on all paths', async () => {
         const { text: text1, headers: headers1 } = await superagent.get('http://localhost:8086/site-1');
         expect(text1).to.include('This is site-1.');
-        expect(headers1['custom-header']).to.equal('custom header value');
+        expect(headers1['custom-header-2']).to.equal('Custom header 2 value');
         const { text: text2, headers: headers2 } = await superagent.get('http://localhost:8086/site-1/test-1');
         expect(text2).to.include('This is site-1.');
-        expect(headers2['custom-header']).to.equal('custom header value');
+        expect(headers2['custom-header-2']).to.equal('Custom header 2 value');
       });
     });
 
