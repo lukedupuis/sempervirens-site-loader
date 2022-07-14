@@ -1,6 +1,6 @@
 {
   "name": "@sempervirens/site-loader",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Provides pre-configurations for loading a website on an Express app",
   "main": "index.js",
   "type": "module",
