@@ -175,7 +175,7 @@ class SiteLoader {
           || `/${p2}` == this.#apiBasePath
         )
         && !this.#endpoints.find(({ path }) => {
-          const _path = path.split(' ')[1];
+          const _path = path.split(' ')[1].split(':')[0];
           return req.path.includes(_path);
         })
       ) {
