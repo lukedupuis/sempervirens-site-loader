@@ -2,7 +2,7 @@
 
 Providing pre-configurations and simplified configuration for loading websites on an Express app, SiteLoader is especially useful for loading multiple websites with different domain names on one Node server.
 
-![Tests badge](https://github.com/lukedupuis/sempervirens-site-loader/actions/workflows/main.yml/badge.svg?event=push) ![Version badge](https://img.shields.io/static/v1?label=Node.js&labelColor=30363c&message=16.x&color=blue)
+![Tests badge](https://github.com/lukedupuis/sempervirens-site-loader/actions/workflows/main.yml/badge.svg?event=push) ![Version badge](https://img.shields.io/static/v1?label=Node&labelColor=30363c&message=16.x&color=blue)
 
 ## Features
 
@@ -130,8 +130,9 @@ http.createServer(app).listen(80, () => console.log('Server started on port 80')
 |--------|------|-------------|
 | `apiBasePath` | string | Sets the API base path. Useful for validating if an API endpoint exists returning a 404 rather than `index.html` if not found. Default: `/api`. |
 | `domain` | string | The website domain. |
-| `endpoints` | Object[] | `{ path: 'METHOD /path', handler: RequestHandler or Function, isSecure?: boolean }` Defines endopints for the site. Endpoints include API endpoints and SSR page endpoints. (Note: SPA webpages are loaded automatically via `index.html`, for which no endpoint should be defined.) `handler` function params are `({ req, res, isSecure })`. See `@sempervirens/endpoint` and `@sempervirens/authorizer` for `isSecure` usage. |
-| `middleware` | Object[] | `{ path?: 'METHOD /path', handler: Function }` Defines site-level or path-level middleware. If `path` is omitted, then the middleware is called for all requests to the site. If `path` is provided, then the middleware is called only for requests to the path. `handler` params are `(req, res, next)`. |
+| `endpoints` | object[] | `{ path: 'METHOD /path', handler: RequestHandler or function, isSecure?: boolean }` Defines endopints for the site. Endpoints include API endpoints and SSR page endpoints. (Note: SPA webpages are loaded automatically via `index.html`, for which no endpoint should be defined.) `handler` function params are `({ req, res, isSecure })`. See `@sempervirens/endpoint` and `@sempervirens/authorizer` for `isSecure` usage. |
+| `middleware` | object[] | `{ path?: 'METHOD /path', handler: function }` Defines site-level or path-level middleware. If `path` is omitted, then the middleware is called for all requests to the site. If `path` is provided, then the middleware is called only for requests to the path. `handler` params are `(req, res, next)`. |4
+| `siteData` | object | A set of data common across the site provided to all endpoints. |
 | `sitesDir` | string | The directory under the project's root directory where the website directories are located. Default: `/sites`. |
 
 ### load
