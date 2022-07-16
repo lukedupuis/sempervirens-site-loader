@@ -11,9 +11,9 @@ class SiteLoader {
 
   #domain;
   #isProd;
+  #data;
   #endpoints;
   #middleware;
-  #data;
 
   #app;
   #apiBasePath;
@@ -26,17 +26,17 @@ class SiteLoader {
     isProd = false,
     apiBasePath = '/api',
     sitesDir = 'sites',
+    data = {},
     endpoints = [],
-    middleware = [],
-    data = {}
+    middleware = []
   } = {}) {
     this.#domain = domain;
     this.#isProd = isProd;
     this.#apiBasePath = apiBasePath.charAt(0) == '/' ? apiBasePath :`/${apiBasePath}`;
     this.#sitesDir = sitesDir;
+    this.#data = data;
     this.#endpoints = endpoints;
     this.#middleware = middleware;
-    this.#data = data;
     this.#validate();
   }
 
@@ -199,7 +199,7 @@ class SiteLoader {
     registerEndpoints({
       app: this.#app,
       endpoints: this.#endpoints,
-      siteData: this.#data
+      data: this.#data
     });
   }
 
