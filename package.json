@@ -15,9 +15,8 @@
     "url": "git+https://github.com/lukedupuis/sempervirens-site-loader.git"
   },
   "keywords": [
-    "Node",
     "Express",
-    "server"
+    "multi-website"
   ],
   "author": "Luke Dupuis",
   "license": "MIT",
