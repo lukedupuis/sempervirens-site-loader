@@ -7,8 +7,8 @@ import { RequestHandler } from '@sempervirens/endpoint';
 import SiteLoader from '../index.js';
 
 class Test1RequestHandler extends RequestHandler {
-  constructor({ req, res, isSecure }) {
-    super({ req, res, isSecure });
+  constructor({ req, res, data, isSecure }) {
+    super({ req, res, data, isSecure });
     this.#init();
   }
   #init() {
@@ -16,12 +16,21 @@ class Test1RequestHandler extends RequestHandler {
   }
 }
 class Test2RequestHandler extends RequestHandler {
-  constructor({ req, res, isSecure }) {
-    super({ req, res, isSecure });
+  constructor({ req, res, data, isSecure }) {
+    super({ req, res, data, isSecure });
     this.#init();
   }
   #init() {
     this.res.send('Success 2');
+  }
+}
+class Test3RequestHandler extends RequestHandler {
+  constructor({ req, res, data, isSecure }) {
+    super({ req, res, data, isSecure });
+    this.#init();
+  }
+  #init() {
+    this.res.send(this.data);
   }
 }
 
@@ -359,7 +368,56 @@ describe('1. SiteLoader', () => {
 
   });
 
-  describe('1.7. When "middleware" is given for one site', () => {
+  describe('1.7. When endpoints are given with "data"', () => {
+
+    const app = express();
+    const siteLoader = new SiteLoader({
+      domain: 'site-1',
+      data: { prop1: 'val1', prop2: 'val2a' },
+      endpoints: [
+        {
+          path: 'GET /api/test-3a',
+          handler: Test3RequestHandler,
+        },
+        {
+          path: 'GET /api/test-3b',
+          handler: Test3RequestHandler,
+          data: { prop3: 'val3' }
+        },
+        {
+          path: 'GET /api/test-3c',
+          handler: Test3RequestHandler,
+          data: { prop2: 'val2b', prop3: 'val3' }
+        }
+      ]
+    });
+    siteLoader.load(app);
+    startServer({ app, port: 8087 });
+
+    describe('1.7.1. When "data" is passed only into the SiteLoader', () => {
+      it('1.7.1.1. Should make the data available in all endpoints', async () => {
+        const { body: body1 } = await superagent.get('http://site-1:8087/api/test-3a');
+        expect(body1).to.deep.equal({ prop1: 'val1', prop2: 'val2a' });
+      });
+    });
+
+    describe('1.7.2. When "data" is passed into SiteLoader and into an endpoint', () => {
+
+      it('1.7.2.1. Should make both the SiteLoader data and the endpoint data available to the endpoint', async () => {
+        const { body } = await superagent.get('http://site-1:8087/api/test-3b');
+        expect(body).to.deep.equal({ prop1: 'val1', prop2: 'val2a', prop3: 'val3' });
+      });
+
+      describe('1.7.2.2. When "data" passed into SiteLoader and "data" passed into the endpoint share a property', () => {
+        it('1.7.2.2.1. Should use the endpoint property', async () => {
+          const { body } = await superagent.get('http://site-1:8087/api/test-3c');
+          expect(body).to.deep.equal({ prop1: 'val1', prop2: 'val2b', prop3: 'val3' });
+        });
+      });
+    });
+  });
+
+  describe('1.8. When "middleware" is given for one site', () => {
     // return;
 
     const app = express();
@@ -386,37 +444,37 @@ describe('1. SiteLoader', () => {
       domain: 'site-2'
     });
     siteLoader2.load(app);
-    startServer({ app, port: 8087 });
+    startServer({ app, port: 8088 });
 
-    it('1.7.1. Should only apply the middleware to the specified site', async () => {
-      const { text, headers } = await superagent.get('http://localhost:8087/site-2');
+    it('1.8.1. Should only apply the middleware to the specified site', async () => {
+      const { text, headers } = await superagent.get('http://localhost:8088/site-2');
       expect(text).to.include('This is site-2.');
       expect(headers['custom-header-1']).not.to.exist;
       expect(headers['custom-header-2']).not.to.exist;
     });
 
-    describe('1.7.2. When "path" is included', () => {
+    describe('1.8.2. When "path" is included', () => {
 
-      it('1.7.2.1 Should apply the middleware to the specified path', async () => {
-        const { text, headers } = await superagent.get('http://localhost:8087/site-1/test-1');
+      it('1.8.2.1 Should apply the middleware to the specified path', async () => {
+        const { text, headers } = await superagent.get('http://localhost:8088/site-1/test-1');
         expect(text).to.include('This is site-1.');
         expect(headers['custom-header-1']).to.equal('Custom header 1 value');
       });
 
-      it('1.7.2.2 Should not apply the middleware to the request at other paths', async () => {
-        const { text, headers } = await superagent.get('http://localhost:8087/site-1');
+      it('1.8.2.2 Should not apply the middleware to the request at other paths', async () => {
+        const { text, headers } = await superagent.get('http://localhost:8088/site-1');
         expect(text).to.include('This is site-1.');
         expect(headers['custom-header-1']).not.to.exist;
       });
 
     });
 
-    describe('1.7.3. When "path" is not included', () => {
-      it('1.7.3.1 Should apply the middleware to the request on all paths', async () => {
-        const { text: text1, headers: headers1 } = await superagent.get('http://localhost:8087/site-1');
+    describe('1.8.3. When "path" is not included', () => {
+      it('1.8.3.1 Should apply the middleware to the request on all paths', async () => {
+        const { text: text1, headers: headers1 } = await superagent.get('http://localhost:8088/site-1');
         expect(text1).to.include('This is site-1.');
         expect(headers1['custom-header-2']).to.equal('Custom header 2 value');
-        const { text: text2, headers: headers2 } = await superagent.get('http://localhost:8087/site-1/test-1');
+        const { text: text2, headers: headers2 } = await superagent.get('http://localhost:8088/site-1/test-1');
         expect(text2).to.include('This is site-1.');
         expect(headers2['custom-header-2']).to.equal('Custom header 2 value');
       });

@@ -58,20 +58,24 @@ const app = express();
 
 // Examples only, separate files recommended
 class Test1RequestHandler extends RequestHandler {
-  constructor({ req, res, isSecure }) {
-    super({ req, res, isSecure });
+  constructor({ req, res, data, isSecure }) {
+    super({ req, res, data, isSecure });
     this.#init();
   }
   #init() {
+    console.log(this.data);
+    // -> { prop1: 'val1', prop2: 'val2a', prop3: 'val3a' }
     this.res.send('Success 1');
   }
 }
 class Test2RequestHandler extends RequestHandler {
-  constructor({ req, res, isSecure }) {
-    super({ req, res, isSecure });
+  constructor({ req, res, data, isSecure }) {
+    super({ req, res, data, isSecure });
     this.#init();
   }
   #init() {
+    console.log(this.data);
+    // -> { prop1: 'val1', prop2: 'val2b', prop3: 'val3b' }
     this.res.send('<html><head><title>Test 1</title></head><body>Hello World!</body></html>');
   }
 }
@@ -79,16 +83,19 @@ class Test2RequestHandler extends RequestHandler {
 // Example only, separate file recommended
 const siteLoader = new SiteLoader({
   domain: 'site-1',
+  data: { prop1: 'val1', prop2: 'val2a' }
   endpoints: [
     {
       path: 'GET /api/test-1',
       handler: Test1RequestHandler,
-      // handler: ({ req, res, isSecure }) => {}
+      // handler: ({ req, res, data, isSecure }) => {}
+      data: { prop3: 'val3a' }
     },
     {
       // Here we return a Server-Side Rendered (SSR) HTML file
       path: 'GET /test-2',
       handler: Test2RequestHandler
+      data: { prop2: 'val2b', prop3: 'val3b' }
     }
   ],
   middleware: [
@@ -129,7 +136,7 @@ http.createServer(app).listen(80, () => console.log('Server started on port 80')
 | Param  | Type | Description |
 |--------|------|-------------|
 | `apiBasePath` | string | Sets the API base path. Useful for validating if an API endpoint exists returning a 404 rather than `index.html` if not found. Default: `/api`. |
-| `data` | object | A set of data common across the site provided to all endpoints. |
+| `data` | object | A set of data common across the site provided to all endpoints. If `data` is also passed into the `RequestHandler` at the endpoint level, then enpoint `data` merges into `SiteLoader` `data`, with the narrower-scope endpoint data taking precedence when the `data` objects have one or more of the same property. |
 | `domain` | string | The website domain. |
 | `endpoints` | object[] | `{ path: 'METHOD /path', handler: RequestHandler or function, isSecure?: boolean }` Defines endopints for the site. Endpoints include API endpoints and SSR page endpoints. (Note: SPA webpages are loaded automatically via `index.html`, for which no endpoint should be defined.) `handler` function params are `({ req, res, isSecure })`. See `@sempervirens/endpoint` and `@sempervirens/authorizer` for `isSecure` usage. |
 | `middleware` | object[] | `{ path?: 'METHOD /path', handler: function }` Defines site-level or path-level middleware. If `path` is omitted, then the middleware is called for all requests to the site. If `path` is provided, then the middleware is called only for requests to the path. `handler` params are `(req, res, next)`. |4
