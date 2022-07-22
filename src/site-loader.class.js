@@ -178,7 +178,12 @@ class SiteLoader {
           || `/${p2}` == this.#apiBasePath
         )
         && !this.#endpoints.find(({ path }) => {
-          const _path = path.split(' ')[1].split(':')[0];
+          const _path = path
+            .split(' ')[1]
+            .split(':')[0]
+            .split('/')
+            .filter(Boolean)
+            .join('/');
           return req.path.includes(_path);
         })
       ) {
