@@ -1,6 +1,6 @@
 import express from 'express';
 import { join } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { registerEndpoints } from '@sempervirens/endpoint';
 
 /**
@@ -218,9 +218,15 @@ class SiteLoader {
   #initCatchAll() {
     this.#app.get('*', (req, res, next) => {
       if (req.isSite) {
-        const index = join(this.publicDir, 'index.html');
-        if (existsSync(index)) {
-          res.sendFile(index);
+        const indexPath = join(this.publicDir, 'index.html');
+        if (existsSync(indexPath)) {
+          let indexContent = readFileSync(indexPath, 'utf8');
+          if (!this.#isProd) {
+            indexContent = indexContent
+              .replace(new RegExp(`${this.#domain}/static`, 'gi'), 'static')
+              .replace(/static/g, `${this.#domain}/static`);
+          }
+          res.send(indexContent);
         } else {
           res.status(404).send();
         }
