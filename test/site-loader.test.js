@@ -37,7 +37,6 @@ class Test3RequestHandler extends RequestHandler {
 describe('1. SiteLoader', () => {
 
   describe('1.1. When parameters are not valid', () => {
-    // return;
 
     describe('1.1.1. When "domain" is not provided', () => {
       it('1.1.1.1. Should throw an error', () => {
@@ -70,7 +69,6 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.2. When one site is loaded', () => {
-    // return;
 
     const app = express();
     const siteLoader1 = new SiteLoader({ domain: 'site-1' });
@@ -122,12 +120,11 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.3. When multiple sites are loaded', async () => {
-    // return;
 
     const app = express();
-    const siteLoader1 = new SiteLoader({ domain: 'site-1' });
+    const siteLoader1 = new SiteLoader({ domain: 'site-1', isMultiSite: true });
     siteLoader1.load(app);
-    const siteLoader2 = new SiteLoader({ domain: 'site-2' });
+    const siteLoader2 = new SiteLoader({ domain: 'site-2', isMultiSite: true });
     siteLoader2.load(app);
     startServer({ app, port: 8081 });
 
@@ -178,10 +175,8 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.4. When "endpoints" are given for one site', () => {
-    // return;
 
     describe('1.4.1. When it is an API endpoint', () => {
-      // return;
 
       const app = express();
       const siteLoader = new SiteLoader({
@@ -201,12 +196,7 @@ describe('1. SiteLoader', () => {
         expect(text).to.equal('Success 1');
       });
 
-      it('1.4.1.2. Should make the endpoint available at http://localhost/{domain}/{path}', async () => {
-        const { text } = await superagent.get('http://localhost:8082/site-1/api/test-1');
-        expect(text).to.equal('Success 1');
-      });
-
-      it('1.4.1.3. Should return a 404 if the request path contains the API endpoint prefix but the endpoint does not exist', async () => {
+      it('1.4.1.2. Should return a 404 if the request path contains the API endpoint prefix but the endpoint does not exist', async () => {
         try {
           await superagent.get('http://localhost:8082/site-1/api/test-2');
         } catch(error) {
@@ -214,7 +204,7 @@ describe('1. SiteLoader', () => {
         }
       });
 
-      it('1.4.1.4. Should return a 404 if the domain is not in the URL before the endpoint path', async () => {
+      it('1.4.1.3. Should return a 404 if the domain is not in the URL before the endpoint path', async () => {
         try {
           await superagent.get('http://localhost:8082/api/test-1');
         } catch(error) {
@@ -225,7 +215,6 @@ describe('1. SiteLoader', () => {
     });
 
     describe('1.4.2. When "apiBasePath" is specified', () => {
-      // return;
 
       const app = express();
       const siteLoader = new SiteLoader({
@@ -246,12 +235,7 @@ describe('1. SiteLoader', () => {
         expect(text).to.equal('Success 1');
       });
 
-      it('1.4.2.2. Should make the endpoint available at http://localhost/{domain}/{path}', async () => {
-        const { text } = await superagent.get('http://localhost:8083/site-1/api-1/test-1');
-        expect(text).to.equal('Success 1');
-      });
-
-      it('1.4.2.3. Should return a 404 if the request path contains the API endpoint prefix but the endpoint does not exist', async () => {
+      it('1.4.2.2. Should return a 404 if the request path contains the API endpoint prefix but the endpoint does not exist', async () => {
         try {
           await superagent.get('http://localhost:8083/site-1/api-1/test-2');
         } catch(error) {
@@ -259,7 +243,7 @@ describe('1. SiteLoader', () => {
         }
       });
 
-      it('1.4.2.4. Should return a 404 if the domain is not in the URL before the endpoint path', async () => {
+      it('1.4.2.3. Should return a 404 if the domain is not in the URL before the endpoint path', async () => {
         try {
           await superagent.get('http://localhost:8083/api-1/test-1');
         } catch(error) {
@@ -272,11 +256,11 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.5. When "endpoints" are given for multiple sites', () => {
-    // return;
 
     const app = express();
     const siteLoader1 = new SiteLoader({
       domain: 'site-1',
+      isMultiSite: true,
       endpoints: [
         {
           path: 'GET /api/test-1',
@@ -287,6 +271,7 @@ describe('1. SiteLoader', () => {
     siteLoader1.load(app);
     const siteLoader2 = new SiteLoader({
       domain: 'site-2',
+      isMultiSite: true,
       endpoints: [
         {
           path: 'GET /api/test-1',
@@ -301,19 +286,9 @@ describe('1. SiteLoader', () => {
     siteLoader2.load(app);
     startServer({ app, port: 8085 });
 
-    it('1.5.1. Should make first site endpoints available at http://{domain}/{path}', async () => {
-      const { text } = await superagent.get('http://site-1:8085/api/test-1');
-      expect(text).to.equal('Success 1');
-    });
-
-    it('1.5.2. Should make first site endpoints available at http://localhost/{domain}/{path}', async () => {
+    it('1.5.1. Should make first site endpoints available at http://localhost/{domain}/{path}', async () => {
       const { text } = await superagent.get('http://localhost:8085/site-1/api/test-1');
       expect(text).to.equal('Success 1');
-    });
-
-    it('1.5.3. Should make second site endpoints available at http://{domain}/{path}', async () => {
-      const { text } = await superagent.get('http://site-2:8085/api/test-2');
-      expect(text).to.equal('Success 2');
     });
 
     it('1.5.4. Should make second site endpoints available at http://localhost/{domain}/{path}', async () => {
@@ -323,8 +298,8 @@ describe('1. SiteLoader', () => {
 
     describe('1.5.6. When one site has the same endpoint path as another site', () => {
       it('1.5.6.1. Should make the endpoint available on both sites separately', async () => {
-        const { text: text1 } = await superagent.get('http://site-1:8085/api/test-1');
-        const { text: text2 } = await superagent.get('http://site-2:8085/api/test-1');
+        const { text: text1 } = await superagent.get('http://localhost:8085/site-1/api/test-1');
+        const { text: text2 } = await superagent.get('http://localhost:8085/site-2/api/test-1');
         expect(text1).to.equal('Success 1');
         expect(text2).to.equal('Success 2');
       });
@@ -333,7 +308,6 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.6. When "endpoints" are given with a function as the handler instead of the RequestHandler class', () => {
-    // return;
 
     const app = express();
     const siteLoader = new SiteLoader({
@@ -418,11 +392,11 @@ describe('1. SiteLoader', () => {
   });
 
   describe('1.8. When "middleware" is given for one site', () => {
-    // return;
 
     const app = express();
     const siteLoader1 = new SiteLoader({
       domain: 'site-1',
+      isMultiSite: true,
       middleware: [
         {
           path: 'GET /test-1',
@@ -441,7 +415,8 @@ describe('1. SiteLoader', () => {
     });
     siteLoader1.load(app);
     const siteLoader2 = new SiteLoader({
-      domain: 'site-2'
+      domain: 'site-2',
+      isMultiSite: true
     });
     siteLoader2.load(app);
     startServer({ app, port: 8088 });

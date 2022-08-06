@@ -1,7 +1,7 @@
 import express from 'express';
 import { join } from 'path';
 import { existsSync, readFileSync } from 'fs';
-import { registerEndpoints } from '@sempervirens/endpoint';
+import { registerEndpoints, registerMiddleware } from '@sempervirens/endpoint';
 
 /**
  * @class SiteLoader
@@ -11,6 +11,7 @@ class SiteLoader {
 
   #domain;
   #isProd;
+  #isMultiSite;
   #data;
   #endpoints;
   #middleware;
@@ -24,6 +25,7 @@ class SiteLoader {
   constructor({
     domain = '',
     isProd = false,
+    isMultiSite = false,
     apiBasePath = '/api',
     sitesDir = 'sites',
     data = {},
@@ -32,6 +34,7 @@ class SiteLoader {
   } = {}) {
     this.#domain = domain;
     this.#isProd = isProd;
+    this.#isMultiSite = isMultiSite;
     this.#apiBasePath = apiBasePath.charAt(0) == '/' ? apiBasePath :`/${apiBasePath}`;
     this.#sitesDir = sitesDir;
     this.#data = data;
@@ -103,7 +106,7 @@ class SiteLoader {
     this.#app.use((req, res, next) => {
       req.pathParts = req.path.split('/').filter(Boolean);
       req.isSite =
-        req.isSite
+        !this.#isMultiSite
         || req.hostname.includes(this.#domain)
         || req.pathParts[0] == this.#domain
         || req.pathParts[1] == this.#domain
@@ -145,18 +148,12 @@ class SiteLoader {
    * through before sending the response.
    */
   #initMiddleware() {
-    this.#middleware.forEach(middleware => {
-      const { handler, path } = middleware;
-      const handle = (req, res, next) => {
-       req.isSite === false ? next() : handler(req, res, next);
-      };
-      if (path) {
-        const [ method, _path ] = path.split(' ');
-        const __path = `*${_path.charAt(0) == '/' ? _path : `/${_path}`}`;
-        this.#app[method.toLowerCase()](__path, handle);
-      } else {
-        this.#app.use(handle);
-      }
+    registerMiddleware({
+      app: this.#app,
+      middleware: this.#middleware,
+      isProd: this.#isProd,
+      isMultiSite: this.#isMultiSite,
+      domain: this.#domain
     });
   }
 
@@ -204,7 +201,10 @@ class SiteLoader {
     registerEndpoints({
       app: this.#app,
       endpoints: this.#endpoints,
-      data: this.#data
+      data: this.#data,
+      isProd: this.#isProd,
+      isMultiSite: this.#isMultiSite,
+      domain: this.#domain
     });
   }
 

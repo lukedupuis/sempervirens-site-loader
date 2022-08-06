@@ -34,6 +34,7 @@ class Test2RequestHandler extends RequestHandler {
 // Example only, separate file recommended
 const siteLoader = new SiteLoader({
   domain: 'site-1',
+  isMultiSite: false,
   endpoints: [
     {
       // /api is the default base API path
