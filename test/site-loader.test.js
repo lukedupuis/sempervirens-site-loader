@@ -342,7 +342,7 @@ describe('1. SiteLoader', () => {
 
   });
 
-  describe('1.7. When endpoints are given with "data"', () => {
+  describe('1.7. When "endpoints" are given with "data"', () => {
 
     const app = express();
     const siteLoader = new SiteLoader({
@@ -453,6 +453,130 @@ describe('1. SiteLoader', () => {
         expect(text2).to.include('This is site-1.');
         expect(headers2['custom-header-2']).to.equal('Custom header 2 value');
       });
+    });
+
+  });
+
+  describe('1.9. When a common resource is requested from the site root', () => {
+
+    describe('1.9.1. When one site is loaded on localhost', () => {
+
+      const app = express();
+      const siteLoader = new SiteLoader({
+        domain: 'site-1'
+      });
+      siteLoader.load(app);
+      startServer({ app, port: 8089 });
+
+      describe('1.9.1.1. When the file is at the public root', () => {
+        it('1.9.1.1.1. Should return the file', async () => {
+          const { text } = await superagent.get('http://localhost:8089/robots.txt');
+          expect(text).to.include('User-agent');
+        });
+      });
+
+      describe('1.9.1.2. When the file is in a directory below the public root', () => {
+        it('1.9.1.2.1. Should return the file', async () => {
+          const { text } = await superagent.get('http://localhost:8089/.well-known/acme-challenge/token');
+          expect(text).to.include('token');
+        });
+      });
+
+    });
+
+    describe('1.9.2. When multpile sites are loaded on localhost', () => {
+
+      const app = express();
+      const siteLoader = new SiteLoader({
+        domain: 'site-1',
+        isMultiSite: true
+      });
+      siteLoader.load(app);
+      const siteLoader2 = new SiteLoader({
+        domain: 'site-2',
+        isMultiSite: true
+      });
+      siteLoader2.load(app);
+      startServer({ app, port: 8090 });
+
+      describe('1.9.2.1. When the file is at the public root', () => {
+        it('1.9.2.1.1. Should return the file', async () => {
+          const { text: t1 } = await superagent.get('http://localhost:8090/site-1/robots.txt');
+          expect(t1).to.include('User-agent');
+          const { text: t2 } = await superagent.get('http://localhost:8090/site-2/robots.txt');
+          expect(t2).to.include('User-agent');
+        });
+      });
+
+      describe('1.9.2.2. When the file is in a directory below the public root', () => {
+        it('1.9.2.2.1. Should return the file', async () => {
+          const { text: t1 } = await superagent.get('http://localhost:8090/site-1/.well-known/acme-challenge/token');
+          expect(t1).to.include('token');
+          const { text: t2 } = await superagent.get('http://localhost:8090/site-2/.well-known/acme-challenge/token');
+          expect(t2).to.include('token');
+        });
+      });
+
+    });
+
+    describe('1.9.3. When one site is loaded with a domain name', () => {
+
+      const app = express();
+      const siteLoader = new SiteLoader({
+        domain: 'site-1'
+      });
+      siteLoader.load(app);
+      startServer({ app, port: 8091 });
+
+      describe('1.9.3.1. When the file is at the public root', () => {
+        it('1.9.3.1.1. Should return the file', async () => {
+          const { text } = await superagent.get('http://site-1:8089/robots.txt');
+          expect(text).to.include('User-agent');
+        });
+      });
+
+      describe('1.9.1.2. When the file is in a directory below the public root', () => {
+        it('1.9.3.2.1. Should return the file', async () => {
+          const { text } = await superagent.get('http://site-1:8089/.well-known/acme-challenge/token');
+          expect(text).to.include('token');
+        });
+      });
+
+    });
+
+    describe('1.9.4. When multpile sites are loaded on localhost', () => {
+
+      const app = express();
+      const siteLoader = new SiteLoader({
+        domain: 'site-1',
+        isMultiSite: true
+      });
+      siteLoader.load(app);
+      const siteLoader2 = new SiteLoader({
+        domain: 'site-2',
+        isMultiSite: true
+      });
+      siteLoader2.load(app);
+      startServer({ app, port: 8092 });
+
+      describe('1.9.4.1. When the file is at the public root', () => {
+        it('1.9.4.1.1. Should return the file', async () => {
+          const { text: t1 } = await superagent.get('http://site-1:8090/robots.txt');
+          expect(t1).to.include('User-agent');
+          const { text: t2 } = await superagent.get('http://site-2:8090/robots.txt');
+          expect(t2).to.include('User-agent');
+        });
+      });
+
+      describe('1.9.4.2. When the file is in a directory below the public root', () => {
+        it('1.9.4.2.1. Should return the file', async () => {
+          const { text: t1 } = await superagent.get('http://site-1:8090/.well-known/acme-challenge/token');
+          expect(t1).to.include('token');
+          const { text: t2 } = await superagent.get('http://site-2:8090/.well-known/acme-challenge/token');
+          expect(t2).to.include('token');
+        });
+      });
+
     });
 
   });

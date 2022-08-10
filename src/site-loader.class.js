@@ -75,6 +75,7 @@ class SiteLoader {
     this.#initRequestProperties();
     this.#initStaticPath();
     this.#initMiddleware();
+    this.#initCommonResources();
     this.#initEndpointValidation();
     this.#initEndpoints();
     this.#initCatchAll();
@@ -156,6 +157,35 @@ class SiteLoader {
       domain: this.#domain
     });
   }
+
+  /**
+   * @function #initCommonResources
+   * @returns {void}
+   * @description Returns common resources requested at the root path (e.g.,
+   * sitemap.xml, robots.txt, etc.).
+   */
+   #initCommonResources() {
+    this.#app.use((req, res, next) => {
+      if (req.isSite) {
+        const pathParts = req.pathParts;
+        if (pathParts[0] == this.#domain) {
+          pathParts.shift();
+        }
+        if ([
+          'sitemap.xml',
+          'robots.txt',
+          '.well-known'
+        ].includes(pathParts[0])) {
+          res.setHeader('content-type', 'text/plain');
+          res.sendFile(join(this.publicDir, pathParts.join('/')));
+        } else {
+          next();
+        }
+      } else {
+        next();
+      }
+    });
+   }
 
   /**
    * @function #initEndpointValidator
