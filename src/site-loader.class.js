@@ -176,8 +176,13 @@ class SiteLoader {
           'robots.txt',
           '.well-known'
         ].includes(pathParts[0])) {
-          res.setHeader('content-type', 'text/plain');
-          res.sendFile(join(this.publicDir, pathParts.join('/')));
+          const path = join(this.publicDir, pathParts.join('/'));
+          if (!existsSync(path)) {
+            res.status(404).send();
+          } else {
+            res.setHeader('content-type', 'text/plain');
+            res.sendFile(path);
+          }
         } else {
           next();
         }
