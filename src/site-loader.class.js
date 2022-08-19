@@ -126,10 +126,10 @@ class SiteLoader {
    * public directory.
    */
   #initStaticPath() {
-    this.#app.use('*/static', (req, res, next) => {
+    const handle = (req, res, next) => {
       if (req.isSite) {
-        const pathParts = req.path.split('/static');
-        if (!existsSync(join(this.publicDir, pathParts[pathParts.length - 1]))) {
+        const path = req.path.split('/static').join('/static');
+        if (!existsSync(join(this.publicDir, path))) {
           res.status(404).send();
         } else {
           express.static(this.publicDir)(req, res, next);
@@ -137,7 +137,9 @@ class SiteLoader {
       } else {
         next();
       }
-    });
+    };
+    this.#app.use('/static', handle);
+    this.#app.use(`/${this.#domain}/static`, handle);
   }
 
   /**

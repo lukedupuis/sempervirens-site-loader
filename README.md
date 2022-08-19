@@ -126,7 +126,6 @@ http.createServer(app).listen(80, () => console.log('Server started on port 80')
 ```
 
 - Now you can make requests locally at `http://localhost` (returns `index.html`), `http://localhost/test-1`, and `http://localhost/test-2`.
-- Or, if you set up your `hosts` file locally to point `site-1` at `127.0.0.1`, you can load on `http://site-1`.
 - Also, after setting up a domain with an A Record pointing to a server IP in the cloud, pass `SiteLoader` your domain name and start the server, and it will load on the public remote machine.
 - If an additional sites are loaded, and `isMultiSite` is set to `true`, then the sites will be available locally at `http://localhost/site-1{/path}`, `http://localhost/site-2{/path}`, etc.
 
