@@ -73,8 +73,8 @@ class SiteLoader {
   load(app) {
     this.#initInstanceProperties(app);
     this.#initRequestProperties();
-    this.#initStaticPath();
     this.#initMiddleware();
+    this.#initStaticPath();
     this.#initCommonResources();
     this.#initEndpointValidation();
     this.#initEndpoints();
@@ -117,6 +117,24 @@ class SiteLoader {
   }
 
   /**
+   * @function #initMiddleware
+   * @returns {void}
+   * @description Defines site-specific middleware on the app before registering
+   * the endpoints, so the middleware is called before the endpoints, because
+   * the endpoints are intended to be the last middleware the request passes
+   * through before sending the response.
+   */
+   #initMiddleware() {
+      registerMiddleware({
+        app: this.#app,
+        middleware: this.#middleware,
+        isProd: this.#isProd,
+        isMultiSite: this.#isMultiSite,
+        domain: this.#domain
+      });
+    }
+
+  /**
    * @function #initStaticPath
    * @returns {void}
    * @description Sets the site's static path to "{star}/static". The star
@@ -140,24 +158,6 @@ class SiteLoader {
     };
     this.#app.use('/static', handle);
     this.#app.use(`/${this.#domain}/static`, handle);
-  }
-
-  /**
-   * @function #initMiddleware
-   * @returns {void}
-   * @description Defines site-specific middleware on the app before registering
-   * the endpoints, so the middleware is called before the endpoints, because
-   * the endpoints are intended to be the last middleware the request passes
-   * through before sending the response.
-   */
-  #initMiddleware() {
-    registerMiddleware({
-      app: this.#app,
-      middleware: this.#middleware,
-      isProd: this.#isProd,
-      isMultiSite: this.#isMultiSite,
-      domain: this.#domain
-    });
   }
 
   /**
